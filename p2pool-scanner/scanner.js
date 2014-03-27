@@ -155,7 +155,9 @@ function Scanner(options) {
                             var init_addr = JSON.parse(fs.readFileSync(config.init_file, 'utf8'));
                             self.inject(init_addr);
                         //}
-
+						console.log("Starting digest")
+						console.log(self.add_pending)
+						
                         for(var i = 0; i < (config.probe_N_IPs_simultaneously || 1); i++)
                             self.digest();
                         dpc(60*1000, function() { self.store_working(); })
