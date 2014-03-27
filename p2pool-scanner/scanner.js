@@ -95,7 +95,7 @@ function Scanner(options) {
                 var uptime = info.stats ? (info.stats.uptime / 60 / 60 / 24).toFixed(1) : "N/A";
                 var fee = (info.fee || 0).toFixed(2);
 
-                str += "<div class='p2p-row "+(row++ & 1 ? "row-grey" : "")+"'><div class='p2p-ip'><a href='http://"+ip+":9171/static/' target='_blank'>"+ip+":9171</a></div><div class='p2p-fee'>"+fee+"%</div><div class='p2p-uptime'>"+uptime+" days</div>";
+                str += "<div class='p2p-row "+(row++ & 1 ? "row-grey" : "")+"'><div class='p2p-ip'><a href='http://"+ip+":"+info.port+"/static/' target='_blank'>"+ip+":"+info.port+"</a></div><div class='p2p-fee'>"+fee+"%</div><div class='p2p-uptime'>"+uptime+" days</div>";
                 str += "<div class='p2p-geo'>";
                 if(info.geo) {
                     str += "<a href='http://www.geoiptool.com/en/?IP="+info.ip+"' target='_blank'>"+info.geo.country+" "+"<img src='"+info.geo.img+"' align='absmiddle' border='0'/></a>";
@@ -191,10 +191,17 @@ function Scanner(options) {
         _.each(addr_list, function(info) {
             var ip = info[0][0];
             var port = info[0][1];
-
-            if(!self.addr_digested[ip] && !self.addr_pending[ip]) {
-                self.addr_pending[ip] = { ip : ip, port : port }
+			
+			var oldInfo = {ip: ip, port: 9171}
+			var newInfo = {ip: ip, port: 9172}
+			
+            if(!self.addr_digested[oldInfo] && !self.addr_pending[oldInfo]) {
+                self.addr_pending[oldInfo] = oldInfo
             }
+            if(!self.addr_digested[info] && !self.addr_pending[info]) {
+                self.addr_pending[oldInfo] = newInfo
+            }
+
 
             self.nodes_total = _.size(self.addr_digested) + _.size(self.addr_pending);
         });
@@ -212,15 +219,15 @@ function Scanner(options) {
             return self.list_complete();
 
         var info = _.find(self.addr_pending, function() { return true; });
-        delete self.addr_pending[info.ip];
-        self.addr_digested[info.ip] = info;
-        // console.log("P2POOL DIGESTING:",info.ip);
+        delete self.addr_pending[info];
+        self.addr_digested[info] = info;
+        console.log("P2POOL DIGESTING:",info.ip, ":", info.port);
 
         digest_ip(info, function(err, fee){
             if(!err) {
                 info.fee = fee;
-                self.addr_working[info.ip] = info;
-                // console.log("FOUND WORKING POOL: ", info.ip);
+                self.addr_working[info] = info;
+                console.log("FOUND WORKING POOL: ", info.ip, ":", info.port);
 
                 digest_local_stats(info, function(err, stats) {
                     if(!err)
@@ -242,7 +249,7 @@ function Scanner(options) {
                 });
             }
             else {
-                delete self.addr_working[info.ip];
+                delete self.addr_working[info];
                 continue_digest();
             }
 
@@ -266,7 +273,7 @@ function Scanner(options) {
 
         var options = {
           host: info.ip,
-          port: 9171,
+          port: info.port,
           path: '/fee',
           method: 'GET'
         };
@@ -278,7 +285,7 @@ function Scanner(options) {
 
         var options = {
           host: info.ip,
-          port: 9171,
+          port: info.port,
           path: '/local_stats',
           method: 'GET'
         };
@@ -290,7 +297,7 @@ function Scanner(options) {
 
         var options = {
           host: info.ip,
-          port: 9171,
+          port: info.port,
           path: '/global_stats',
           method: 'GET'
         };
