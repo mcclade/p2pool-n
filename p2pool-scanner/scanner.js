@@ -156,7 +156,7 @@ function Scanner(options) {
                             self.inject(init_addr);
                         //}
 						console.log("Starting digest")
-						console.log(self.add_pending)
+						console.log(self.addr_pending)
 						
                         for(var i = 0; i < (config.probe_N_IPs_simultaneously || 1); i++)
                             self.digest();
